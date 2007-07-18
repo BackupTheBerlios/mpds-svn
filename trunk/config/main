@@ -1,0 +1,39 @@
+[general]
+input=readline
+
+[passwords]
+guest=gast
+user=benutzer
+admin=chef
+
+[device pr0led]
+type=pr0led
+std_destination=pr0led0
+destfct_blue=bus
+destfct_blue_format=0 %s
+destfct_green=bus
+destfct_green_format=1 %s
+destfct_red=bus
+destfct_red_format=2 %s
+destdev_blue=
+destdev_green=
+destdev_red=
+destdev_sinus=this
+destfct_sinus=red
+destdev_linear=this
+destfct_linear=blue
+desc=a pr0led string
+
+[device Toastdevice]
+type=pr0led
+std_destination=dmx4all0
+destfct_blue=bus
+destfct_blue_format=0 %s
+destfct_green=bus
+destfct_green_format=1 %s
+destfct_red=bus
+destfct_red_format=2 %s
+destdev_blue=pr0led_bus0
+destdev_green=
+destdev_red=
+desc=A nice testdevice2

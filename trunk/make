@@ -1,0 +1,53 @@
+#! /bin/bash
+
+CC_Flags="-g -fPIC -c -Wall"
+
+################
+### console
+
+gcc ${CC_Flags} console_helper.c
+gdc ${CC_Flags} console.d
+gdc -module -shared console_helper.o console.o -o libconsole.so
+
+################
+### main
+
+gdc ${CC_Flags} general.d
+gdc ${CC_Flags} libini.d
+gdc ${CC_Flags} pluginclasses.d
+gdc ${CC_Flags} dmxnode.d
+gdc ${CC_Flags} dmxdevbus.d
+gdc ${CC_Flags} dmxfunction.d
+gdc ${CC_Flags} dmxfprogram.d
+gdc ${CC_Flags} dmxp.d
+
+gdc ${CC_Flags} main.d;
+gdc -export-dynamic -ldl main.o libini.o dmxp.o dmxnode.o dmxdevbus.o dmxfunction.o dmxfprogram.o pluginclasses.o general.o -o main
+
+################
+### plugins
+
+gdc ${CC_Flags} plugin_out_dmx4all.d
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_dmx4all.o -o libplugin_dmx4all.so
+
+gdc ${CC_Flags} plugin_out_pr0led.d
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_pr0led.o -o libplugin_pr0led.so
+
+gdc ${CC_Flags} plugin_in_terminal.d
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_terminal.o -o libplugin_terminal.so
+
+gdc ${CC_Flags} readline.d
+gdc ${CC_Flags} plugin_in_readline.d
+gdc -module -shared -L. -lreadline -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_readline.o readline.o -o libplugin_readline.so
+
+gdc ${CC_Flags} plugin_in_ipv4.d
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_ipv4.o -o libplugin_in_ipv4.so
+
+gdc ${CC_Flags} plugin_out_ipv4.d
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_ipv4.o -o libplugin_out_ipv4.so
+
+###############
+#### c_interface
+
+gdc ${CC_Flags} c_interface.d
+gdc -module -shared -L. c_interface.o -o libipv4cinterface.so

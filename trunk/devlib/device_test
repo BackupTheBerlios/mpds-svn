@@ -1,0 +1,28 @@
+[general]
+name=pr0led
+desc=
+
+[function blue]
+type=range
+min=0
+max=255
+
+[function green]
+type=range
+min=0
+max=255
+
+[function red]
+type=range
+min=0
+max=255
+
+[function sinus]
+type=sinus
+min=50
+max=255
+
+[function linear]
+type=linear
+min=150
+max=255
