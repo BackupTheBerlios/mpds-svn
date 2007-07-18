@@ -1,0 +1,10 @@
+Multi-purpose Device Server (MDS) is intended as a framework to virtualize 
+devices and especially their individual functions. It was initially designed
+to control DMX (http://en.wikipedia.org/wiki/DMX512-A) devices over a network.
+
+In its current state the core functionality is provided and it has a working 
+network protocol. Further development will go into various code improvements
+and more controller and user interfaces.
+
+
+
