@@ -1,6 +1,7 @@
 #! /bin/bash
 
-CC_Flags="-g -fPIC -c -Wall"
+CC_DB_FLAGS="-g -Wall"
+CC_Flags=${CC_DB_FLAGS}" -fPIC -c"
 
 ################
 ### console
@@ -24,21 +25,23 @@ gdc ${CC_Flags} dmxp.d
 gdc ${CC_Flags} main.d;
 gdc -export-dynamic -ldl main.o libini.o dmxp.o dmxnode.o dmxdevbus.o dmxfunction.o dmxfprogram.o pluginclasses.o general.o -o main
 
+gdc -module -shared -ldl libini.o dmxp.o dmxnode.o dmxdevbus.o dmxfunction.o dmxfprogram.o pluginclasses.o general.o -o libmpds.so
+
 ################
 ### plugins
 
 gdc ${CC_Flags} plugin_out_dmx4all.d
-gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_dmx4all.o -o libplugin_dmx4all.so
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_dmx4all.o -o libplugin_out_dmx4all.so
 
 gdc ${CC_Flags} plugin_out_pr0led.d
-gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_pr0led.o -o libplugin_pr0led.so
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_out_pr0led.o -o libplugin_out_pr0led.so
 
 gdc ${CC_Flags} plugin_in_terminal.d
-gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_terminal.o -o libplugin_terminal.so
+gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_terminal.o -o libplugin_in_terminal.so
 
 gdc ${CC_Flags} readline.d
 gdc ${CC_Flags} plugin_in_readline.d
-gdc -module -shared -L. -lreadline -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_readline.o readline.o -o libplugin_readline.so
+gdc -module -shared -L. -lreadline -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_readline.o readline.o -o libplugin_in_readline.so
 
 gdc ${CC_Flags} plugin_in_ipv4.d
 gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunction.o general.o libini.o plugin_in_ipv4.o -o libplugin_in_ipv4.so
@@ -49,5 +52,11 @@ gdc -module -shared -L. -lconsole pluginclasses.o dmxnode.o dmxdevbus.o dmxfunct
 ###############
 #### c_interface
 
-gdc ${CC_Flags} c_interface.d
-gdc -module -shared -L. c_interface.o -o libipv4cinterface.so
+gdc ${CC_Flags} c_wrapper.d
+gdc -module -shared -L. -lconsole -lmpds c_wrapper.o plugin_out_ipv4.o -o libmpds_c_wrapper.so
+
+###############
+#### examples
+
+gcc ${CC_Flags} -I. examples/client.c
+gcc ${CC_DB_Flags} -L. client.o -lconsole -lgphobos -lmpds -lmpds_c_wrapper -o client

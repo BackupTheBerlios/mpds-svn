@@ -74,7 +74,7 @@ class dmxconn {
 	RetMessage start() {
 		char []buf;
 		RetMessage result;
-		
+
 		//Thread t = new Thread(&start_loop, cast(void*)ipconn, 0);
 		try {
 			InternetHost ih = new InternetHost;
@@ -88,33 +88,46 @@ class dmxconn {
 			printd(E_MT.MT_ERROR, e.msg~"\n");
 			return new RetMessage(0, e.msg);
 		}
-		
+
 		stream = new SocketStream(sock);
 		
 		dmxpc = new DMXpClient(stream);
 		
 		char [][char[]] dada;
 		dada = dmxpc.info();
+		return new RetMessage(1);
+	}
+	
+	RetMessage login() {
+		return login(this.level, this.passwd);
+	}
+	
+	RetMessage login(char[] level, char[] passwd) {
+		RetMessage result;
 
-		//foreach (key,data;dada)
-		//	writef("cmd %s | %s >\n", key, data);
-		
 		if ((level != "") && (passwd != "")) {
 			result = dmxpc.login(level,passwd);
 			if (!result.ret)
-				printd(E_MT.MT_ERROR, result.all()~"\n");
+				printd(E_MT.MT_DEBUG, result.all()~"\n");
+			return result;
 		}
-
-		devices = dmxpc.list_devices();
-
-		foreach (dev ;devices) {
-			if (!(dev.name in parent.devices))
-				parent.devices[dev.name] = cast(DMXDeviceAbstract) dev;
-			else
-				printd(E_MT.MT_ERROR,std.string.format("device '%s' is already in list", dev.name));
-		}
+		return new RetMessage(1,"no login data provided");
+	}
+	
+	RetMessage load_devices() {
+		RetMessage result;
 		
-		return new RetMessage(1);
+		result = dmxpc.list_devices(&devices);
+		
+		if (result.ret) {
+			foreach (dev ;devices) {
+				if (!(dev.name in parent.devices))
+					parent.devices[dev.name] = cast(DMXDeviceAbstract) dev;
+				else
+					printd(E_MT.MT_ERROR,std.string.format("device '%s' is already in list", dev.name));
+			}
+		}
+		return result;
 	}
 	
 	void printd(E_MT messagetype, char[] message) { parent.printd(messagetype, message); }
@@ -122,7 +135,7 @@ class dmxconn {
 
 class tcpout_plugin : Output_Plugin {
 	ini_obj ini_config;
-	dmxconn []dcs;
+	dmxconn [char []]dcs;
 	
 	this(char []name) {
 		super(name);
@@ -140,6 +153,7 @@ class tcpout_plugin : Output_Plugin {
 	
 	RetMessage init(DMXNode node) {
 		dmxconn dc;
+		RetMessage res;
 	
 		super.init(node);
 		printd(E_MT.MT_DEBUG,std.string.format("Init plugin.\n"));
@@ -157,9 +171,13 @@ class tcpout_plugin : Output_Plugin {
 					dc.level = value["level"];
 				if ("passwd" in value)
 					dc.passwd = value["passwd"];
-				dcs ~= dc;
+				dcs[value["host"]~value["port"]] = dc;
 				printd(E_MT.MT_DEBUG,std.string.format("Connecting to %s@%s:%s...\n", dc.level, value["host"], value["port"]));
-				dc.start();
+				res = dc.start();
+				if (res.ret) {
+					dc.login();
+					dc.load_devices();
+				}
 			} else
 				printd(E_MT.MT_ERROR,std.string.format("Ignoring '%s' - missing host variable.\n", key));
 		}
@@ -168,11 +186,13 @@ class tcpout_plugin : Output_Plugin {
 	
 	RetMessage connectTo(DMXNode node, char[] host, ushort port) {
 		dmxconn dc;
+		RetMessage res;
 		
 		dc = new dmxconn(this, host, port);
 		if (dc) {
-			dcs ~= dc;
-			return dc.start();
+			dcs[std.string.format("%s:%d",host,port)] = dc;
+			res = dc.start();
+			return res;
 		}
 		return new RetMessage(0);
 	}

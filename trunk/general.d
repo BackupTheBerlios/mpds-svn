@@ -24,12 +24,15 @@ import std.regexp;
 extern (C) uint sleep(uint seconds);
 extern (C) uint usleep(uint usec);
 
-enum E_MT {MT_ERROR, MT_DEBUG};
+enum E_MT {MT_DEBUG, MT_ERROR};
+
+E_MT mess_min_level;
 
 const char [] NO_DESTINATIONFCT = "no_destfct";
 
 void printd(E_MT level, char []message) {
-	writef("%s", message);
+	if (level >= mess_min_level)
+		writef("%s", message);
 }
 
 /*char [] re_search(char[] regex, char[] sentence) {

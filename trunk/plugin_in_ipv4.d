@@ -50,9 +50,12 @@ class IPv4Conn {
 		SocketStream stream = new SocketStream(conn);
 		while (! stream.eof() & !parent.node.close) {
 			buf = stream.readLine();
-			if (std.string.strip(buf) != "")
-				stream.writeLine(parent.dmxp.command(session, std.string.strip(buf)));
-			stream.writeLine("\n\n");
+			if (std.string.strip(buf) != "") {
+				if (! stream.eof())
+					stream.writeString(parent.dmxp.command(session, std.string.strip(buf))~"\n");
+			}
+			if (! stream.eof())
+				stream.writeString("\n\n");
 		}
 		
 		parent.dmxp.closeSession(session);

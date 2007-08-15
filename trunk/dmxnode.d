@@ -45,6 +45,7 @@ class DMXNode {
 	char [] description;
 	int node_version;
 	ini_obj config;
+	E_MT mess_min_level;
 	
 	char [] plugin_dir;
 	char [] config_dir;
@@ -59,12 +60,14 @@ class DMXNode {
 	DMXpServer dmxp;
 	
 	int close;
-	
+
 	this (char []name) {
+
 		this.name = name;
 		this.node_version = node_version;
 		this.description = "standard DMXNode";
 		close = false;
+		mess_min_level = E_MT.MT_DEBUG;
 		
 		dmxp = new DMXpServer(this);
 	}
@@ -85,6 +88,7 @@ class DMXNode {
 	void run() {
 		char [][] ipluginlist;
 		ipluginlist = std.string.split(config["general"]["input"],",");
+		
 		foreach (iplugin; ipluginlist) {
 			if (iplugin in iplugins) {
 				printd(E_MT.MT_DEBUG, std.string.format("Starting plugin '%s'...\n", iplugin));
@@ -277,8 +281,36 @@ class DMXNode {
 		return 1;
 	}
 	
+	int load_plugin(char[] d) {
+		printd(E_MT.MT_DEBUG, "Loading " ~ plugin_dir ~ d ~ "...\n");
+		Plugin plug = Plugin.new_plugin_from(config_dir, plugin_dir, d);
+		if (plug) {
+			switch (plug.type) {
+				case Plugin_Type.PT_OUTPUT:	if (!(plug.name in this.oplugins)) {
+									this.oplugins[plug.name] = cast(Output_Plugin) plug;
+									plug.init(this);
+									foreach(dev; (cast(Output_Plugin) plug).devices) {
+										if (!(dev.name in this.devices)) {
+											this.devices[dev.name] = dev;
+										} else
+											printd(E_MT.MT_ERROR, "Device '"~dev.name~"' is already in the list.\n");
+									}
+								} else
+									printd(E_MT.MT_ERROR, std.string.format("%s is already in the list of plugins.\n", plug.name));
+								break;
+				case Plugin_Type.PT_INPUT:	if (!(plug.name in this.iplugins)) {
+									this.iplugins[plug.name] = cast(Input_Plugin) plug;
+									plug.init(this);
+								} else
+									printd(E_MT.MT_ERROR, std.string.format("%s is already in the list of plugins.\n", plug.name));
+								break;
+				default:	break;
+			}
+		}
+		return 1;
+	}
+	
 	int load_plugins() {
-		int load_error = 0;
 		char [][] dirlist;
 		
 		dirlist = listdir(plugin_dir);
@@ -287,35 +319,11 @@ class DMXNode {
 		foreach (d; dirlist) {
 			if (isfile(d)) {
 				if (m.test(d) != 0) {
-					printd(E_MT.MT_DEBUG, "Loading " ~ plugin_dir ~ d ~ "...\n");
-					Plugin plug = Plugin.new_plugin_from(config_dir, plugin_dir, d);
-					if (plug) {
-						switch (plug.type) {
-							case Plugin_Type.PT_OUTPUT:	if (!(plug.name in this.oplugins)) {
-												this.oplugins[plug.name] = cast(Output_Plugin) plug;
-												plug.init(this);
-												foreach(dev; (cast(Output_Plugin) plug).devices) {
-													if (!(dev.name in this.devices)) {
-														this.devices[dev.name] = dev;
-													} else
-														printd(E_MT.MT_ERROR, "Device '"~dev.name~"' is already in the list.\n");
-												}
-											} else
-												printd(E_MT.MT_ERROR, std.string.format("%s is already in the list of plugins.\n", plug.name));
-											break;
-							case Plugin_Type.PT_INPUT:	if (!(plug.name in this.iplugins)) {
-												this.iplugins[plug.name] = cast(Input_Plugin) plug;
-												plug.init(this);
-											} else
-												printd(E_MT.MT_ERROR, std.string.format("%s is already in the list of plugins.\n", plug.name));
-											break;
-							default:	break;
-						}
-					}
+					load_plugin(d);
 				}
 			}
 		}
-		return !load_error;
+		return 1;
 	}
 	
 	int close_plugins() {
@@ -330,5 +338,8 @@ class DMXNode {
 		return 1;
 	}
 	
-	void printd(E_MT messagetype, char[] message) { general.printd(messagetype, this.name ~ ": " ~ message); }
+	void printd(E_MT messagetype, char[] message) {
+		if (messagetype >= mess_min_level)
+			general.printd(messagetype, this.name ~ ": " ~ message);
+	}
 }

@@ -121,7 +121,7 @@ class CH_ListDevices : CommandHandler {
 	char [] execute(char [] cmd) {
 		char [][]arg;
 		char []result = "\n";
-
+		
 		arg = re_search(`^\s*(\S+)$`, cmd);
 		if (arg) {
 			if (arg[1] in dmxp.node.devices) {
@@ -137,7 +137,8 @@ class CH_ListDevices : CommandHandler {
 		}
 	}
 	
-	DMXDeviceAbstract[char[]] send() {
+	//DMXDeviceAbstract[char[]] send() {
+	RetMessage send(DMXDeviceAbstract[char[]] *p_devices) {
 		DMXDeviceAbstract[char[]] devices;
 		RetMessage res;
 		char [][]lines;
@@ -145,51 +146,57 @@ class CH_ListDevices : CommandHandler {
 		char [][]rex2;
 		char []device;
 		char []fct;
-		
+
+		//devices = *p_devices;
+
 		res = dmxpc.send_command(this.command~"\n");
-		lines = res.all().split("\n");
+
+		if (res.ret) {
 		
-		foreach (line;lines) {
-			rex = re_search(`^Device\s\'(\S+)\'\swith\sstatus:\s(.+)`, line);
-			if (rex) {
-				device = rex[1];
-				devices[device] = new DMXDeviceAbstract(device);
-				devices[device].fix_status = rex[2];
-			}
-			rex = re_search(`^\s-\sDesc:\s(.+)`, line);
-			if (rex) {
-				devices[device].description = rex[1];
-			}
-			rex = re_search(`^\s-\sType:\s(.+)`, line);
-			if (rex) {
-				devices[device].type = "v_"~rex[1];
-			}
+			lines = res.all().split("\n");
 			
-			rex = re_search(`^\s+\*\s\'(\S+)\'\s\((\S+)\)\sis\s(\S+),\s(.*)`, line);
-			if (rex) {
-				fct = rex[1];
-				devices[device].functions[fct] = new DMXF_Virtual(fct, devices[device], dmxpc);
-				devices[device].functions[fct].type = "v_"~rex[2];
-				//active
-				//final / connected
+			foreach (line;lines) {
+				rex = re_search(`^Device\s\'(\S+)\'\swith\sstatus:\s(.+)`, line);
+				if (rex) {
+					device = rex[1];
+					devices[device] = new DMXDeviceAbstract(device);
+					devices[device].fix_status = rex[2];
+				}
+				rex = re_search(`^\s-\sDesc:\s(.+)`, line);
+				if (rex) {
+					devices[device].description = rex[1];
+				}
+				rex = re_search(`^\s-\sType:\s(.+)`, line);
+				if (rex) {
+					devices[device].type = "v_"~rex[1];
+				}
 				
-				(cast(DMXF_Virtual) devices[device].functions[fct]).vdestfct = fct;
-				(cast(DMXF_Virtual) devices[device].functions[fct]).vdestdev = device;
-				(cast(DMXF_Virtual) devices[device].functions[fct]).vdesthost = dmxpc.stream.socket().remoteAddress().toString();
+				rex = re_search(`^\s+\*\s\'(\S+)\'\s\((\S+)\)\sis\s(\S+),\s(.*)`, line);
+				if (rex) {
+					fct = rex[1];
+					devices[device].functions[fct] = new DMXF_Virtual(fct, devices[device], dmxpc);
+					devices[device].functions[fct].type = "v_"~rex[2];
+					//active
+					//final / connected
 					
-				
-				/*rex2 = re_search(`connected\swith\s\'(\S+)\'\sof\sdevice\s\'(\S+)\'`, rex[4]);
-				if (rex2) {
-					//destfct_args
-					(cast(DMXF_Virtual) devices[device].functions[fct]).vdestfct = rex2[1];
-					(cast(DMXF_Virtual) devices[device].functions[fct]).vdestdev = rex2[2];
+					(cast(DMXF_Virtual) devices[device].functions[fct]).vdestfct = fct;
+					(cast(DMXF_Virtual) devices[device].functions[fct]).vdestdev = device;
 					(cast(DMXF_Virtual) devices[device].functions[fct]).vdesthost = dmxpc.stream.socket().remoteAddress().toString();
-					//destdev
-				}*/
+						
+					
+					/*rex2 = re_search(`connected\swith\s\'(\S+)\'\sof\sdevice\s\'(\S+)\'`, rex[4]);
+					if (rex2) {
+						//destfct_args
+						(cast(DMXF_Virtual) devices[device].functions[fct]).vdestfct = rex2[1];
+						(cast(DMXF_Virtual) devices[device].functions[fct]).vdestdev = rex2[2];
+						(cast(DMXF_Virtual) devices[device].functions[fct]).vdesthost = dmxpc.stream.socket().remoteAddress().toString();
+						//destdev
+					}*/
+				}
 			}
 		}
-		
-		return devices;
+		*p_devices = devices;
+		return res;
 	}
 }
 
@@ -980,8 +987,8 @@ class DMXpClient : DMXp {
 		return h_Login.send(level, password);
 	}
 	
-	DMXDeviceAbstract [char[]]list_devices() {
-		return h_ListDevices.send();
+	RetMessage list_devices(DMXDeviceAbstract [char[]] *devices) {
+		return h_ListDevices.send(devices);
 	}
 	
 	
@@ -1019,8 +1026,8 @@ class DMXpClient : DMXp {
 			else
 				return new RetMessage(0, desc);
 		}
-
-		return new RetMessage(0, "malformed response.");
+		
+		return new RetMessage(0, "malformed response: "~result);
 	}
 	
 	RetMessage send_command(char []cmd) {
