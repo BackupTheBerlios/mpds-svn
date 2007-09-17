@@ -1,5 +1,5 @@
 [general]
-input=terminal,IPv4_In
+input=readline,IPv4_In
 
 [passwords]
 guest=gast

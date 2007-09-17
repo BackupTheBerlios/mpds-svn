@@ -131,7 +131,7 @@ class dmx4all_bus : DMXDeviceAbstract {
 		
 		success = sconn.write(cmd);
 		if (success) {
-			buf = sconn.read(id.length+200);
+			buf = sconn.read(cast(int)id.length+200);
 			auto m = RegExp(std.string.strip(id));
 			if (m.test(std.string.strip(buf)))
 				return 1;

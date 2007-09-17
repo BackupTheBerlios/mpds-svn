@@ -51,7 +51,7 @@ class SerialConnection {
 	}
 	
 	int write(char []str) {
-		return write_dev(f, str.ptr, str.length);
+		return write_dev(f, str.ptr, cast(int) str.length);
 	}
 	
 	char []read(int max) {

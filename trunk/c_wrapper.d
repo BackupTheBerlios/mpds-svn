@@ -80,7 +80,7 @@ int mpds_start(char* host, ushort port, char *level, char *passwd, char** result
 			res = conn.login(lvl,pwd);
 		}
 		
-		*result = cast(char*) malloc(res.all().length);
+		*result = cast(char*)  std.c.stdlib.malloc(res.all().length);
 		strncpy(*result,std.string.toStringz(res.all()),res.all().length+1);
 		return res.ret;
 	}
@@ -100,12 +100,12 @@ int mpds_getDevices(char** devices) {
 		}
 		
 		
-		*devices = cast(char*) malloc(result.length);
+		*devices = cast(char*) std.c.stdlib.malloc(result.length);
 		strncpy(*devices,std.string.toStringz(result),result.length+1);
 		
 		return res.ret;
 	} else {
-		*devices = cast(char*) malloc(res.all().length);
+		*devices = cast(char*) std.c.stdlib.malloc(res.all().length);
 		strncpy(*devices,std.string.toStringz(res.all()),res.all().length+1);
 		return res.ret;
 	}
@@ -123,13 +123,13 @@ int mpds_getFunctions(char *device, char **functions) {
 		}
 		
 		
-		*functions = cast(char*) malloc(result.length);
+		*functions = cast(char*) std.c.stdlib.malloc(result.length);
 		strncpy(*functions,std.string.toStringz(result),result.length+1);
 		
 		return 1;
 	} else {
 		result = "device not found";
-		*functions = cast(char*) malloc(result.length);
+		*functions = cast(char*) std.c.stdlib.malloc(result.length);
 		strncpy(*functions,std.string.toStringz(result),result.length+1);
 		return 0;
 	}
@@ -149,19 +149,19 @@ int mpds_setFunction(char *device, char *func, char* value, char** result) {
 		if (fct in conn.parent.devices[dev].functions) {
 			res = conn.parent.devices[dev].functions[fct].set(buf);
 			
-			*result = cast(char*) malloc(res.all().length);
+			*result = cast(char*) std.c.stdlib.malloc(res.all().length);
 			strncpy(*result,std.string.toStringz(res.all()),res.all().length+1);
 			
 			return res.ret;
 		} else {
 			buf = "function not found";
-			*result = cast(char*) malloc(buf.length);
+			*result = cast(char*) std.c.stdlib.malloc(buf.length);
 			strncpy(*result,std.string.toStringz(buf),buf.length+1);
 			return 0;
 		}
 	} else {
 		buf = "device not found";
-		*result = cast(char*) malloc(buf.length);
+		*result = cast(char*) std.c.stdlib.malloc(buf.length);
 		strncpy(*result,std.string.toStringz(buf),buf.length+1);
 		return 0;
 	}
